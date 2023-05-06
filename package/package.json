@@ -1,0 +1,35 @@
+{
+  "name": "@anhdiepmmk/nestjs-cache",
+  "version": "1.0.0",
+  "description": "Nestjs cache",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "nestjs",
+    "nestjs module",
+    "nestjs cache module",
+    "cache module",
+    "cache",
+    "caching",
+    "anhdiepmmk",
+    "redis",
+    "cache manager",
+    "cache decorator",
+    "cache manager decorator",
+    "cache manager service",
+    "cache manager module"
+  ],
+  "author": "anhdiepmmk",
+  "license": "ISC",
+  "dependencies": {
+    "@nestjs/common": "^9.4.0",
+    "rxjs": "^7.8.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.1.0",
+    "rimraf": "^5.0.0",
+    "typescript": "^5.0.4"
+  }
+}
