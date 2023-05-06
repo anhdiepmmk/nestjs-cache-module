@@ -21,7 +21,9 @@ npm install
 ## 2. Integrate `package` into `example` project
 ```
 cd ../package
+npm install
 npm run watch
+# open new terminal
 npm link
 cd ../example
 npm link @anhdiepmmk/nestjs-cache-module
