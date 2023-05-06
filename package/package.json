@@ -1,10 +1,14 @@
 {
-  "name": "@anhdiepmmk/nestjs-cache",
-  "version": "1.0.0",
-  "description": "Nestjs cache",
-  "main": "index.js",
+  "name": "@anhdiepmmk/nestjs-cache-module",
+  "version": "1.0.1",
+  "description": "Nestjs cache module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest",
+    "build": "rimraf dist && tsc",
+    "prepublish": "npm run build",
+    "watch": "tsc --watch"
   },
   "keywords": [
     "nestjs",
@@ -28,8 +32,13 @@
     "rxjs": "^7.8.1"
   },
   "devDependencies": {
+    "@nestjs/testing": "^9.4.0",
+    "@types/jest": "^29.5.1",
     "@types/node": "^20.1.0",
+    "jest": "^29.5.0",
+    "prettier": "^2.8.8",
     "rimraf": "^5.0.0",
+    "ts-jest": "^29.1.0",
     "typescript": "^5.0.4"
   }
 }
