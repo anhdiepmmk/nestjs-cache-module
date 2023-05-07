@@ -1,12 +1,15 @@
 import _ from 'lodash';
 import stableStringify from 'json-stable-stringify';
-import { DEFAULT_CACHE_SEPARATOR } from '../constants';
+import {
+  DEFAULT_CACHE_SEPARATOR,
+  DEFAULT_FUNCTION_ARGS_POSTFIX,
+} from '../constants';
 import { GeneratorFunction } from './types';
 
 export const defaultFunctionArgsSerializer: GeneratorFunction = <T>(
   functionArgs: T,
 ): string => {
-  return Buffer.from(stableStringify(functionArgs)).toString('base64');
+  return Buffer.from(stableStringify(functionArgs) ?? '{}').toString('base64');
 };
 
 export const generateProgrammaticallyKeyBasedOnClassNameAndFunctionNameAndFunctionArgs =
@@ -17,7 +20,6 @@ export const generateProgrammaticallyKeyBasedOnClassNameAndFunctionNameAndFuncti
     className,
     functionName,
   }: {
-    keyOrGenerator?: string | GeneratorFunction;
     functionArgsSerializer?: GeneratorFunction;
     functionArgs: unknown;
     cacheSeparator?: string;
@@ -32,7 +34,7 @@ export const generateProgrammaticallyKeyBasedOnClassNameAndFunctionNameAndFuncti
     try {
       postFix = !_.isEmpty(functionArgs)
         ? actualFunctionArgsSerializer(functionArgs)
-        : 'EmptyArgs';
+        : DEFAULT_FUNCTION_ARGS_POSTFIX;
     } catch (error) {
       const originalErrorMessage: string | undefined = _.get(error, 'message');
 
