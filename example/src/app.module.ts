@@ -4,7 +4,15 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
 @Module({
-  imports: [CacheModule.register({})],
+  imports: [
+    CacheModule.register({
+      memoryConfig: {
+        ttl: 15 * 60 * 1000,
+        max: 100,
+      },
+      cacheModulePrefix: 'test-service',
+    }),
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
