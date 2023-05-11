@@ -16,7 +16,7 @@ on:
       - "hotfix/*"
 
 jobs:
-  publish:
+  test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code

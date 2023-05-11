@@ -1,7 +1,8 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { MemoryCache } from 'cache-manager';
 import { CACHE_MODULE_OPTIONS, CACHE_MANAGER_INSTANCE } from './constants';
 import { CacheModuleOptions } from './cache-module-options';
+import _ from 'lodash';
 
 @Injectable()
 export class CacheService {
@@ -30,12 +31,34 @@ export class CacheService {
   }
 
   /**
-   * Del by key
-   * @param key key to del
+   * Del by key or pattern
+   * eg1: post-service:posts:123
+   * eg2: post-service:posts:*
+   * eg3: post-service:posts:*:author
+   * eg4: post-service:posts:abc*:author
+   * @param key key or pattern to del
    */
-  async del(key: string): Promise<void> {
-    const actualKey: string = `${this.getModulePrefix()}${key}`;
-    await this.memoryCache.store.del(actualKey);
+  async del(keyOrPattern: string): Promise<void> {
+    // TODO: keyOrPattern should be an string or array
+
+    const isPattern: boolean =
+      _.includes(keyOrPattern, ':*') ||
+      _.includes(keyOrPattern, '*:') ||
+      keyOrPattern === '*';
+
+    let keysToDelete: string[] = [keyOrPattern];
+
+    if (isPattern) {
+      keysToDelete = await this.keys(keyOrPattern);
+    }
+
+    const modulePrefix: string = this.getModulePrefix();
+
+    await this.memoryCache.store.mdel(
+      ..._.map(keysToDelete, (keysToDelete) => {
+        return `${modulePrefix}${keysToDelete}`;
+      }),
+    );
   }
 
   /**
@@ -46,13 +69,27 @@ export class CacheService {
   async keys(pattern?: string): Promise<string[]> {
     let actualPattern: string;
 
+    const modulePrefix: string = this.getModulePrefix();
+
     if (pattern) {
-      actualPattern = `${this.getModulePrefix()}${pattern}`;
+      actualPattern = `${modulePrefix}${pattern}`;
     } else {
-      actualPattern = this.getModulePrefix();
+      actualPattern = modulePrefix;
     }
 
-    return this.memoryCache.store.keys(pattern);
+    const regex = new RegExp(`^${modulePrefix}`);
+
+    const keysWithPrefix = await this.memoryCache.store.keys(pattern);
+
+    const keysWithoutPrefix: string[] = keysWithPrefix.map((keyWithPrefix) => {
+      if (!modulePrefix) {
+        return keyWithPrefix;
+      }
+
+      return keyWithPrefix.replace(regex, '');
+    });
+
+    return keysWithoutPrefix;
   }
 
   /**

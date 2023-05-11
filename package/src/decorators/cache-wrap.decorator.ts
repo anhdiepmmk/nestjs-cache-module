@@ -6,12 +6,14 @@ import { CacheWrapOptions } from './types';
 import { translateKeyOrGeneratorToString } from './cache.utils';
 import _ from 'lodash';
 
-export function CacheWrap({
-  keyOrGenerator,
-  debug,
-  ttlInMilliseconds,
-  functionArgsSerializer,
-}: CacheWrapOptions) {
+export function CacheWrap(options?: CacheWrapOptions) {
+  const {
+    keyOrGenerator,
+    debug,
+    ttlInMilliseconds,
+    functionArgsSerializer,
+  }: CacheWrapOptions = options ?? {};
+
   const logger: Logger = new Logger('Cache Wrap Decorator');
 
   const injectorCacheService = Inject(CacheService);
@@ -34,7 +36,8 @@ export function CacheWrap({
       const injectedModuleOptions: CacheModuleOptions = (this as any)
         .injectedModuleOptions;
 
-      const className = target.constructor.name || DEFAULT_CLASS_NAME;
+      const className: string =
+        _.get(target, 'constructor.name') || DEFAULT_CLASS_NAME;
 
       const keyToCache: string = translateKeyOrGeneratorToString({
         keyOrGenerator,

@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "test": "jest",
+    "test": "jest --coverage",
     "build": "rimraf dist && tsc -p ./tsconfig.build.json",
     "prepublish": "npm run build",
     "watch": "tsc --watch ./tsconfig.build.json"

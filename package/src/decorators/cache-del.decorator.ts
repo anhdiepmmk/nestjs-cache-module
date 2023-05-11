@@ -1,6 +1,10 @@
 import { Inject, Logger } from '@nestjs/common';
 import { CacheService } from '../cache.service';
-import { CACHE_MODULE_OPTIONS, DEFAULT_CLASS_NAME } from '../constants';
+import {
+  CACHE_MODULE_OPTIONS,
+  DEFAULT_CACHE_SEPARATOR,
+  DEFAULT_CLASS_NAME,
+} from '../constants';
 import { CacheModuleOptions } from '../cache-module-options';
 import _ from 'lodash';
 import { translateKeyOrGeneratorToString } from './cache.utils';
@@ -33,7 +37,11 @@ export function CacheDel({
       const injectedModuleOptions: CacheModuleOptions = (this as any)
         .injectedModuleOptions;
 
-      const className = target.constructor.name || DEFAULT_CLASS_NAME;
+      const className: string = _.get(
+        target,
+        'constructor.name',
+        DEFAULT_CLASS_NAME,
+      );
 
       const keyOrPatternToDelete: string = translateKeyOrGeneratorToString({
         keyOrGenerator,
@@ -44,28 +52,12 @@ export function CacheDel({
         cacheSeparator: injectedModuleOptions.cacheSeparator,
       });
 
-      let keysToDelete: string[] = [keyOrPatternToDelete];
-
-      // eg1: post-service:posts:*
-      // eg2: post-service:posts:*:author
-      // eg3: post-service:posts:abc*:author
-
-      const isPattern: boolean =
-        _.includes(keyOrPatternToDelete, ':*') ||
-        _.includes(keyOrPatternToDelete, '*:');
-
-      if (isPattern) {
-        keysToDelete = await injectedCacheService.keys(keyOrPatternToDelete);
-      }
-
       if (debug) {
         const allKeys: string[] = await injectedCacheService.keys('*');
 
         logger.debug({
           message: `Before called ${className}:${functionName}`,
           keyOrPatternToDelete,
-          isPattern,
-          keysToDelete,
           allKeys,
           functionArgs,
         });
@@ -80,11 +72,7 @@ export function CacheDel({
         error = err;
         throw err;
       } finally {
-        const deleteCacheResult = await Promise.allSettled(
-          keysToDelete.map((keyToDelete: string) =>
-            injectedCacheService.del(keyToDelete),
-          ),
-        );
+        await injectedCacheService.del(keyOrPatternToDelete);
 
         if (debug) {
           const allKeys: string[] = await injectedCacheService.keys('*');
@@ -92,12 +80,9 @@ export function CacheDel({
           logger.debug({
             message: `After called ${className}:${functionName}`,
             keyOrPatternToDelete,
-            isPattern,
-            keysToDelete,
             allKeys,
             functionArgs,
             result,
-            deleteCacheResult,
             error: error
               ? {
                   message: _.get(error, 'message'),
