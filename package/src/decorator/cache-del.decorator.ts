@@ -1,20 +1,17 @@
 import { Inject, Logger } from '@nestjs/common';
-import { CacheService } from '../cache.service';
+import { CacheService } from '../service/cache.service';
 import { CACHE_MODULE_OPTIONS, DEFAULT_CLASS_NAME } from '../constants';
 import { CacheModuleOptions } from '../cache-module-options';
-import { CacheWrapOptions } from './types';
-import { translateKeyOrGeneratorToString } from './cache.utils';
 import _ from 'lodash';
+import { translateKeyOrGeneratorToString } from '../utility/cache.utility';
+import { CacheDelOptions } from '../types';
 
-export function CacheWrap(options?: CacheWrapOptions) {
-  const {
-    keyOrGenerator,
-    debug,
-    ttlInMilliseconds,
-    functionArgsSerializer,
-  }: CacheWrapOptions = options ?? {};
-
-  const logger: Logger = new Logger('Cache Wrap Decorator');
+export function CacheDel({
+  keyOrGenerator,
+  debug,
+  functionArgsSerializer,
+}: CacheDelOptions) {
+  const logger: Logger = new Logger('Cache Del Decorator');
 
   const injectorCacheService = Inject(CacheService);
   const injectorModuleOptions = Inject(CACHE_MODULE_OPTIONS);
@@ -36,10 +33,13 @@ export function CacheWrap(options?: CacheWrapOptions) {
       const injectedModuleOptions: CacheModuleOptions = (this as any)
         .injectedModuleOptions;
 
-      const className: string =
-        _.get(target, 'constructor.name') || DEFAULT_CLASS_NAME;
+      const className: string = _.get(
+        target,
+        'constructor.name',
+        DEFAULT_CLASS_NAME,
+      );
 
-      const keyToCache: string = translateKeyOrGeneratorToString({
+      const keyOrPatternToDelete: string = translateKeyOrGeneratorToString({
         keyOrGenerator,
         className,
         functionName,
@@ -53,39 +53,30 @@ export function CacheWrap(options?: CacheWrapOptions) {
 
         logger.debug({
           message: `Before called ${className}:${functionName}`,
-          keyToCache,
+          keyOrPatternToDelete,
           allKeys,
-          ttlInMilliseconds,
           functionArgs,
         });
       }
 
       let result: unknown;
       let error: unknown;
-      let didCacheHit: boolean = true;
 
       try {
-        result = await injectedCacheService.wrap(
-          keyToCache,
-          () => {
-            didCacheHit = false;
-            return originalMethod.apply(this, functionArgs);
-          },
-          ttlInMilliseconds,
-        );
+        result = await originalMethod.apply(this, functionArgs);
       } catch (err) {
         error = err;
         throw err;
       } finally {
+        await injectedCacheService.del(keyOrPatternToDelete);
+
         if (debug) {
           const allKeys: string[] = await injectedCacheService.keys('*');
 
           logger.debug({
             message: `After called ${className}:${functionName}`,
-            keyToCache,
-            didCacheHit,
+            keyOrPatternToDelete,
             allKeys,
-            ttlInMilliseconds,
             functionArgs,
             result,
             error: error

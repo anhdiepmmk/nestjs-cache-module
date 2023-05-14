@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CacheService } from '../cache.service';
+import { CacheService } from '../service/cache.service';
 import { Injectable, Logger } from '@nestjs/common';
 import { CacheWrap } from './cache-wrap.decorator';
 import { CacheModule } from '../cache.module';
-import * as cacheUtils from './cache.utils';
+import * as cacheUtility from '../utility/cache.utility';
 import _ from 'lodash';
 import jsonStableStringify from 'json-stable-stringify';
 
@@ -228,7 +228,7 @@ describe('CacheWrapDecorator', () => {
   it('when wrapped function throw an error should throw as usual', async () => {
     jest.spyOn(cacheService, 'wrap');
     jest.spyOn(userService, 'getUserById');
-    jest.spyOn(cacheUtils, 'translateKeyOrGeneratorToString');
+    jest.spyOn(cacheUtility, 'translateKeyOrGeneratorToString');
 
     // prove cache do not exist
     await expect(cacheService.get('users:b-user-id')).resolves.toBeUndefined();
@@ -249,9 +249,11 @@ describe('CacheWrapDecorator', () => {
       undefined,
     );
 
-    expect(cacheUtils.translateKeyOrGeneratorToString).toHaveBeenCalled();
-    expect(cacheUtils.translateKeyOrGeneratorToString).toHaveBeenCalledTimes(1);
-    expect(cacheUtils.translateKeyOrGeneratorToString).toHaveBeenCalledWith({
+    expect(cacheUtility.translateKeyOrGeneratorToString).toHaveBeenCalled();
+    expect(cacheUtility.translateKeyOrGeneratorToString).toHaveBeenCalledTimes(
+      1,
+    );
+    expect(cacheUtility.translateKeyOrGeneratorToString).toHaveBeenCalledWith({
       cacheSeparator: undefined,
       className: 'UserService',
       functionArgs: ['b user id'],
