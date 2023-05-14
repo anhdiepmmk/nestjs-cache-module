@@ -4,7 +4,7 @@ import {
   DEFAULT_CACHE_SEPARATOR,
   DEFAULT_FUNCTION_ARGS_POSTFIX,
 } from '../constants';
-import { GeneratorFunction } from './types';
+import { GeneratorFunction } from '../types';
 
 export const defaultFunctionArgsSerializer: GeneratorFunction = <T>(
   functionArgs: T,

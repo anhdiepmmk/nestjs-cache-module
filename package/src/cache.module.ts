@@ -1,5 +1,5 @@
 import { DynamicModule } from '@nestjs/common';
-import { CacheService } from './cache.service';
+import { CacheService } from './service/cache.service';
 import { CacheModuleOptions } from './cache-module-options';
 import {
   CACHE_MANAGER_INSTANCE,
@@ -22,19 +22,19 @@ const createMemoryCache = async (
 };
 
 export class CacheModule {
-  static register(options: CacheModuleOptions): DynamicModule {
+  static register(options?: CacheModuleOptions): DynamicModule {
     return {
       module: CacheModule,
       providers: [
         CacheService,
         {
           provide: CACHE_MODULE_OPTIONS,
-          useValue: options,
+          useValue: options ?? {},
         },
         {
           provide: CACHE_MANAGER_INSTANCE,
           useFactory: async () => {
-            return createMemoryCache(options.memoryConfig);
+            return createMemoryCache(options?.memoryConfig);
           },
         },
       ],

@@ -1,7 +1,12 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { MemoryCache } from 'cache-manager';
-import { CACHE_MODULE_OPTIONS, CACHE_MANAGER_INSTANCE } from './constants';
-import { CacheModuleOptions } from './cache-module-options';
+import {
+  CACHE_MODULE_OPTIONS,
+  CACHE_MANAGER_INSTANCE,
+  DEFAULT_CACHE_SEPARATOR,
+} from '../constants';
+import { CacheModuleOptions } from '../cache-module-options';
+import { filterArrayByPattern } from '../utility/array.utility';
 import _ from 'lodash';
 
 @Injectable()
@@ -18,7 +23,8 @@ export class CacheService {
       return '';
     }
 
-    const separator: string = this.options.cacheSeparator ?? ':';
+    const separator: string =
+      this.options.cacheSeparator ?? DEFAULT_CACHE_SEPARATOR;
 
     return `${this.options.cacheModulePrefix}${separator}`;
   }
@@ -41,10 +47,7 @@ export class CacheService {
   async del(keyOrPattern: string): Promise<void> {
     // TODO: keyOrPattern should be an string or array
 
-    const isPattern: boolean =
-      _.includes(keyOrPattern, ':*') ||
-      _.includes(keyOrPattern, '*:') ||
-      keyOrPattern === '*';
+    const isPattern: boolean = _.includes(keyOrPattern, '*');
 
     let keysToDelete: string[] = [keyOrPattern];
 
@@ -74,20 +77,30 @@ export class CacheService {
     if (pattern) {
       actualPattern = `${modulePrefix}${pattern}`;
     } else {
-      actualPattern = modulePrefix;
+      actualPattern = `${modulePrefix}*`;
     }
+
+    const keysWithPrefix: string[] = await this.memoryCache.store.keys(
+      actualPattern,
+    );
+
+    // ensure filter key by pattern (in case of using memory cache store the memoryCache.store.keys(pattern) will always return all keys even specific pattern)
+    const filteredKeysWithPrefix: string[] = filterArrayByPattern(
+      actualPattern,
+      keysWithPrefix,
+    );
 
     const regex = new RegExp(`^${modulePrefix}`);
 
-    const keysWithPrefix = await this.memoryCache.store.keys(pattern);
+    const keysWithoutPrefix: string[] = filteredKeysWithPrefix.map(
+      (keyWithPrefix) => {
+        if (!modulePrefix) {
+          return keyWithPrefix;
+        }
 
-    const keysWithoutPrefix: string[] = keysWithPrefix.map((keyWithPrefix) => {
-      if (!modulePrefix) {
-        return keyWithPrefix;
-      }
-
-      return keyWithPrefix.replace(regex, '');
-    });
+        return keyWithPrefix.replace(regex, '');
+      },
+    );
 
     return keysWithoutPrefix;
   }

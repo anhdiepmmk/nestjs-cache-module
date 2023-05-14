@@ -1,11 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CacheService } from '../cache.service';
+import { CacheService } from '../service/cache.service';
 import { Injectable, Logger } from '@nestjs/common';
 import { CacheWrap } from './cache-wrap.decorator';
 import { CacheModule } from '../cache.module';
-import * as cacheUtils from './cache.utils';
 import _ from 'lodash';
-import jsonStableStringify from 'json-stable-stringify';
 import { CacheDel } from './cache-del.decorator';
 
 @Injectable()

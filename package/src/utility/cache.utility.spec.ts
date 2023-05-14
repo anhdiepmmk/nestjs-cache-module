@@ -1,7 +1,7 @@
-import * as cacheUtils from './cache.utils';
+import * as cacheUtility from './cache.utility';
 import stableStringify from 'json-stable-stringify';
 
-describe('cache.utils', () => {
+describe('cache.utility', () => {
   afterEach(() => {
     jest.restoreAllMocks();
   });
@@ -9,7 +9,7 @@ describe('cache.utils', () => {
   describe('translateKeyOrGeneratorToString', () => {
     it('should return a cache key', () => {
       expect(
-        cacheUtils.translateKeyOrGeneratorToString({
+        cacheUtility.translateKeyOrGeneratorToString({
           className: 'ClassName',
           functionArgs: ['hello world'],
           functionName: 'sayHello',
@@ -26,7 +26,7 @@ describe('cache.utils', () => {
       });
 
       expect(
-        cacheUtils.translateKeyOrGeneratorToString({
+        cacheUtility.translateKeyOrGeneratorToString({
           className: 'ClassName',
           functionArgs: ['hello world', 'hi there'],
           functionName: 'sayHello',
@@ -39,12 +39,12 @@ describe('cache.utils', () => {
 
     it('when `keyOrGenerator` is not provided should return a generate cache key based on class name, function name and default function args serializer', () => {
       jest.spyOn(
-        cacheUtils,
+        cacheUtility,
         'generateProgrammaticallyKeyBasedOnClassNameAndFunctionNameAndFunctionArgs',
       );
 
       expect(
-        cacheUtils.translateKeyOrGeneratorToString({
+        cacheUtility.translateKeyOrGeneratorToString({
           className: 'ClassName',
           functionArgs: ['hello world'],
           functionName: 'sayHello',
@@ -54,11 +54,11 @@ describe('cache.utils', () => {
       ).toBe('ClassName:sayHello:WyJoZWxsbyB3b3JsZCJd');
 
       expect(
-        cacheUtils.generateProgrammaticallyKeyBasedOnClassNameAndFunctionNameAndFunctionArgs,
+        cacheUtility.generateProgrammaticallyKeyBasedOnClassNameAndFunctionNameAndFunctionArgs,
       ).toHaveBeenCalled();
 
       expect(
-        cacheUtils.generateProgrammaticallyKeyBasedOnClassNameAndFunctionNameAndFunctionArgs,
+        cacheUtility.generateProgrammaticallyKeyBasedOnClassNameAndFunctionNameAndFunctionArgs,
       ).toBeCalledWith({
         cacheSeparator: undefined,
         className: 'ClassName',
@@ -70,7 +70,7 @@ describe('cache.utils', () => {
 
     it('when `keyOrGenerator` is not provided should return a generate cache key based on class name, function name and custom function args serializer', () => {
       jest.spyOn(
-        cacheUtils,
+        cacheUtility,
         'generateProgrammaticallyKeyBasedOnClassNameAndFunctionNameAndFunctionArgs',
       );
 
@@ -79,7 +79,7 @@ describe('cache.utils', () => {
       });
 
       expect(
-        cacheUtils.translateKeyOrGeneratorToString({
+        cacheUtility.translateKeyOrGeneratorToString({
           className: 'ClassName',
           functionArgs: ['hello world', 'hi there'],
           functionName: 'sayHello',
@@ -89,11 +89,11 @@ describe('cache.utils', () => {
       ).toBe('ClassName:sayHello:hello world&hi there');
 
       expect(
-        cacheUtils.generateProgrammaticallyKeyBasedOnClassNameAndFunctionNameAndFunctionArgs,
+        cacheUtility.generateProgrammaticallyKeyBasedOnClassNameAndFunctionNameAndFunctionArgs,
       ).toHaveBeenCalled();
 
       expect(
-        cacheUtils.generateProgrammaticallyKeyBasedOnClassNameAndFunctionNameAndFunctionArgs,
+        cacheUtility.generateProgrammaticallyKeyBasedOnClassNameAndFunctionNameAndFunctionArgs,
       ).toBeCalledWith({
         cacheSeparator: undefined,
         className: 'ClassName',
@@ -105,12 +105,12 @@ describe('cache.utils', () => {
 
     it('when `keyOrGenerator` and `functionArgs` is not provided should return a generate cache key based on class name, function name and using `EmptyArgs` as postfix', () => {
       jest.spyOn(
-        cacheUtils,
+        cacheUtility,
         'generateProgrammaticallyKeyBasedOnClassNameAndFunctionNameAndFunctionArgs',
       );
 
       expect(
-        cacheUtils.translateKeyOrGeneratorToString({
+        cacheUtility.translateKeyOrGeneratorToString({
           className: 'ClassName',
           functionArgs: undefined,
           functionName: 'sayHello',
@@ -119,11 +119,11 @@ describe('cache.utils', () => {
       ).toBe('ClassName:sayHello:EmptyArgs');
 
       expect(
-        cacheUtils.generateProgrammaticallyKeyBasedOnClassNameAndFunctionNameAndFunctionArgs,
+        cacheUtility.generateProgrammaticallyKeyBasedOnClassNameAndFunctionNameAndFunctionArgs,
       ).toHaveBeenCalled();
 
       expect(
-        cacheUtils.generateProgrammaticallyKeyBasedOnClassNameAndFunctionNameAndFunctionArgs,
+        cacheUtility.generateProgrammaticallyKeyBasedOnClassNameAndFunctionNameAndFunctionArgs,
       ).toBeCalledWith({
         cacheSeparator: undefined,
         className: 'ClassName',
@@ -141,7 +141,7 @@ describe('cache.utils', () => {
       };
 
       const str: string =
-        cacheUtils.defaultFunctionArgsSerializer(functionArgs);
+        cacheUtility.defaultFunctionArgsSerializer(functionArgs);
 
       expect(str).toBe(
         Buffer.from(stableStringify(functionArgs)).toString('base64'),
@@ -155,7 +155,7 @@ describe('cache.utils', () => {
       };
 
       const str: string =
-        cacheUtils.defaultFunctionArgsSerializer(functionArgs);
+        cacheUtility.defaultFunctionArgsSerializer(functionArgs);
 
       expect(str).toBe(
         Buffer.from(
@@ -171,7 +171,7 @@ describe('cache.utils', () => {
       const functionArgs = undefined;
 
       const str: string =
-        cacheUtils.defaultFunctionArgsSerializer(functionArgs);
+        cacheUtility.defaultFunctionArgsSerializer(functionArgs);
 
       expect(str).toBe(Buffer.from('{}').toString('base64'));
     });
@@ -180,7 +180,7 @@ describe('cache.utils', () => {
   describe('generateProgrammaticallyKeyBasedOnClassNameAndFunctionNameAndFunctionArgs', () => {
     it('should return a generated cache key', () => {
       const key: string =
-        cacheUtils.generateProgrammaticallyKeyBasedOnClassNameAndFunctionNameAndFunctionArgs(
+        cacheUtility.generateProgrammaticallyKeyBasedOnClassNameAndFunctionNameAndFunctionArgs(
           {
             className: 'ClassA',
             functionName: 'sayHello',
@@ -190,7 +190,7 @@ describe('cache.utils', () => {
           },
         );
 
-      const base64PostFix: string = cacheUtils.defaultFunctionArgsSerializer([
+      const base64PostFix: string = cacheUtility.defaultFunctionArgsSerializer([
         'hello',
       ]);
 
@@ -203,10 +203,10 @@ describe('cache.utils', () => {
           return (functionArgs as string[]).join('&');
         });
 
-        jest.spyOn(cacheUtils, 'defaultFunctionArgsSerializer');
+        jest.spyOn(cacheUtility, 'defaultFunctionArgsSerializer');
 
         const key: string =
-          cacheUtils.generateProgrammaticallyKeyBasedOnClassNameAndFunctionNameAndFunctionArgs(
+          cacheUtility.generateProgrammaticallyKeyBasedOnClassNameAndFunctionNameAndFunctionArgs(
             {
               className: 'ClassA',
               functionName: 'sayHello',
@@ -217,14 +217,16 @@ describe('cache.utils', () => {
           );
 
         expect(key).toBe(`ClassA:sayHello:hi bob&hi there`);
-        expect(cacheUtils.defaultFunctionArgsSerializer).not.toHaveBeenCalled();
+        expect(
+          cacheUtility.defaultFunctionArgsSerializer,
+        ).not.toHaveBeenCalled();
       });
 
       it('when function args serializer is not provided should using default function args serializer to generate postfix', () => {
-        jest.spyOn(cacheUtils, 'defaultFunctionArgsSerializer');
+        jest.spyOn(cacheUtility, 'defaultFunctionArgsSerializer');
 
         const key: string =
-          cacheUtils.generateProgrammaticallyKeyBasedOnClassNameAndFunctionNameAndFunctionArgs(
+          cacheUtility.generateProgrammaticallyKeyBasedOnClassNameAndFunctionNameAndFunctionArgs(
             {
               className: 'ClassA',
               functionName: 'sayHello',
@@ -233,27 +235,26 @@ describe('cache.utils', () => {
             },
           );
 
-        const base64PostFix: string = cacheUtils.defaultFunctionArgsSerializer([
-          'hi bob',
-        ]);
+        const base64PostFix: string =
+          cacheUtility.defaultFunctionArgsSerializer(['hi bob']);
 
         expect(key).toBe(`ClassA:sayHello:${base64PostFix}`);
-        expect(cacheUtils.defaultFunctionArgsSerializer).toHaveBeenCalled();
-        expect(cacheUtils.defaultFunctionArgsSerializer).toHaveBeenCalledTimes(
-          2,
-        );
+        expect(cacheUtility.defaultFunctionArgsSerializer).toHaveBeenCalled();
         expect(
-          cacheUtils.defaultFunctionArgsSerializer,
+          cacheUtility.defaultFunctionArgsSerializer,
+        ).toHaveBeenCalledTimes(2);
+        expect(
+          cacheUtility.defaultFunctionArgsSerializer,
         ).toHaveBeenNthCalledWith(1, ['hi bob']);
 
         expect(
-          cacheUtils.defaultFunctionArgsSerializer,
+          cacheUtility.defaultFunctionArgsSerializer,
         ).toHaveBeenNthCalledWith(2, ['hi bob']);
       });
 
       it('when function args is empty or not provided should using `EmptyArgs` as default postfix', () => {
         const key1: string =
-          cacheUtils.generateProgrammaticallyKeyBasedOnClassNameAndFunctionNameAndFunctionArgs(
+          cacheUtility.generateProgrammaticallyKeyBasedOnClassNameAndFunctionNameAndFunctionArgs(
             {
               className: 'ClassA',
               functionName: 'sayHello',
@@ -263,7 +264,7 @@ describe('cache.utils', () => {
           );
 
         const key2: string =
-          cacheUtils.generateProgrammaticallyKeyBasedOnClassNameAndFunctionNameAndFunctionArgs(
+          cacheUtility.generateProgrammaticallyKeyBasedOnClassNameAndFunctionNameAndFunctionArgs(
             {
               className: 'ClassA',
               functionName: 'sayHello',
@@ -278,7 +279,7 @@ describe('cache.utils', () => {
 
       it('should throw an error with formatted message when function args serializer throw an error', () => {
         const fn1: Function = () =>
-          cacheUtils.generateProgrammaticallyKeyBasedOnClassNameAndFunctionNameAndFunctionArgs(
+          cacheUtility.generateProgrammaticallyKeyBasedOnClassNameAndFunctionNameAndFunctionArgs(
             {
               className: 'ClassA',
               functionName: 'sayHello',
@@ -291,7 +292,7 @@ describe('cache.utils', () => {
           );
 
         const fn2: Function = () =>
-          cacheUtils.generateProgrammaticallyKeyBasedOnClassNameAndFunctionNameAndFunctionArgs(
+          cacheUtility.generateProgrammaticallyKeyBasedOnClassNameAndFunctionNameAndFunctionArgs(
             {
               className: 'ClassA',
               functionName: 'sayHello',
@@ -316,7 +317,7 @@ describe('cache.utils', () => {
     describe('cache separator', () => {
       it('when `cache separator` is not set then should return a generated cache key with `:` as default separator', () => {
         const key: string =
-          cacheUtils.generateProgrammaticallyKeyBasedOnClassNameAndFunctionNameAndFunctionArgs(
+          cacheUtility.generateProgrammaticallyKeyBasedOnClassNameAndFunctionNameAndFunctionArgs(
             {
               className: 'ClassA',
               functionName: 'sayHello',
@@ -326,16 +327,15 @@ describe('cache.utils', () => {
             },
           );
 
-        const base64PostFix: string = cacheUtils.defaultFunctionArgsSerializer([
-          'hello',
-        ]);
+        const base64PostFix: string =
+          cacheUtility.defaultFunctionArgsSerializer(['hello']);
 
         expect(key).toBe(`ClassA:sayHello:${base64PostFix}`);
       });
 
       it('when `cache separator` is set should return a generated cache key with override operator', () => {
         const key: string =
-          cacheUtils.generateProgrammaticallyKeyBasedOnClassNameAndFunctionNameAndFunctionArgs(
+          cacheUtility.generateProgrammaticallyKeyBasedOnClassNameAndFunctionNameAndFunctionArgs(
             {
               className: 'ClassA',
               functionName: 'sayHello',
@@ -345,9 +345,8 @@ describe('cache.utils', () => {
             },
           );
 
-        const base64PostFix: string = cacheUtils.defaultFunctionArgsSerializer([
-          'hello',
-        ]);
+        const base64PostFix: string =
+          cacheUtility.defaultFunctionArgsSerializer(['hello']);
 
         expect(key).toBe(`ClassA_sayHello_${base64PostFix}`);
       });
