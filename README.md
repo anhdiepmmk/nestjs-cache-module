@@ -6,7 +6,7 @@ NestJS Cache Module is a powerful wrapper library built specifically for the Nes
 [![codecov](https://codecov.io/gh/anhdiepmmk/nestjs-cache-module/branch/master/graph/badge.svg)](https://codecov.io/gh/anhdiepmmk/nestjs-cache-module)
 
 ## Key Features
-- Decorator Functions: The module provides a set of convenient decorators such as @CacheWrap, @CacheDel, @CacheSet, and @CacheGet that seamlessly integrate with your NestJS project. These decorators allow you to easily wrap methods, delete cached values, set new values, and retrieve cached data, all with minimal effort.
+- **Decorator Functions**: The module provides a set of convenient decorators such as `@CacheWrap`, `@CacheDel`, `@CacheSet`, and `@CacheGet` that seamlessly integrate with your NestJS project. These decorators allow you to easily wrap methods, delete cached values, set new values, and retrieve cached data, all with minimal effort.
 
 - **Reduced Boilerplate**: With NestJS Cache Module, you can significantly reduce the amount of boilerplate code required for caching operations. The decorators handle the caching logic for you, so you can focus on building the core functionality of your application without getting bogged down in caching implementation details.
 
