@@ -17,4 +17,4 @@ NestJS Cache Module is a powerful wrapper library built specifically for the Nes
 - **Highly Customizable**: The module allows you to customize caching configurations according to your needs. You can fine-tune cache expiration times, cache keys, cache prefixes, and other settings to ensure optimal performance and tailored caching behavior for your application.
 
 
-WIP (working is in process, we will update documentation for this project soon)
+*2023-05-18 - WIP (working is in process, we will update documentation for this project soon)*
