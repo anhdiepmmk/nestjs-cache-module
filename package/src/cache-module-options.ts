@@ -1,8 +1,34 @@
-import { MemoryConfig } from 'cache-manager';
+import { Cache, Config, MemoryConfig } from 'cache-manager';
+import { RedisClusterConfig } from 'cache-manager-ioredis-yet';
+import Redis, { Cluster, RedisOptions } from 'ioredis';
+
+export type RedisStoreConfig = (
+  | RedisOptions
+  | {
+      clusterConfig: RedisClusterConfig;
+    }
+) &
+  Config;
+
+export type CacheEngineCreationConfig =
+  | { name: string; type: 'ioredis'; config?: RedisStoreConfig }
+  | {
+      name: string;
+      type: 'ioredis-instance';
+      config: {
+        ioredisInstance: Redis | Cluster;
+        options?: Config;
+      };
+    }
+  | { name: string; type: 'memory'; config?: MemoryConfig };
 
 export type CacheModuleOptions = {
-  memoryConfig?: MemoryConfig;
   cacheModulePrefix?: string;
   cacheSeparator?: string;
-  //   type: 'memory' | 'redis'
+  createCacheEngine?: () => Promise<Cache | Cache[]>;
+  cacheEngineCreationConfigs?: CacheEngineCreationConfig[];
+  defaultMemoryCacheEngineCreationConfig?: MemoryConfig;
+  // shouldThrowAnErrorIfCacheEngineSetupFails?: boolean;
+  shouldAlwaysSetupDefaultMemoryCacheEngine?: boolean;
+  shouldSetupDefaultMemoryCacheEngineAsFallback?: boolean;
 };

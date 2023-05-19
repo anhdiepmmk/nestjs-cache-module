@@ -1,19 +1,24 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { MemoryCache } from 'cache-manager';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
   CACHE_MODULE_OPTIONS,
   CACHE_MANAGER_INSTANCE,
   DEFAULT_CACHE_SEPARATOR,
+  CACHE_ENGINES,
 } from '../constants';
 import { CacheModuleOptions } from '../cache-module-options';
 import { filterArrayByPattern } from '../utility/array.utility';
 import _ from 'lodash';
+import { CacheEngine, CacheManager } from '../types';
 
 @Injectable()
 export class CacheService {
+  private readonly logger: Logger = new Logger(CacheService.name);
+
   constructor(
     @Inject(CACHE_MANAGER_INSTANCE)
-    private readonly memoryCache: MemoryCache,
+    private readonly cacheManagerInstance: CacheManager,
+    @Inject(CACHE_ENGINES)
+    private readonly cacheEngines: CacheEngine[],
     @Inject(CACHE_MODULE_OPTIONS)
     private readonly options: CacheModuleOptions,
   ) {}
@@ -33,7 +38,7 @@ export class CacheService {
    * Reset
    */
   async reset(): Promise<void> {
-    await this.memoryCache.store.reset();
+    await this.cacheManagerInstance.reset();
   }
 
   /**
@@ -57,7 +62,7 @@ export class CacheService {
 
     const modulePrefix: string = this.getModulePrefix();
 
-    await this.memoryCache.store.mdel(
+    await this.cacheManagerInstance.mdel(
       ..._.map(keysToDelete, (keysToDelete) => {
         return `${modulePrefix}${keysToDelete}`;
       }),
@@ -80,9 +85,23 @@ export class CacheService {
       actualPattern = `${modulePrefix}*`;
     }
 
-    const keysWithPrefix: string[] = await this.memoryCache.store.keys(
-      actualPattern,
+    const totalKeysWithPrefix: Array<string[]> = await Promise.all(
+      this.cacheEngines.map(async (cacheEngine: CacheEngine) => {
+        try {
+          return await cacheEngine.store.keys(actualPattern);
+        } catch (error) {
+          this.logger.error({
+            message: 'Store keys error',
+            actualPattern,
+            cacheEngine,
+            error,
+          });
+        }
+        return [];
+      }),
     );
+
+    const keysWithPrefix: string[] = _.uniq(_.flatMap(totalKeysWithPrefix));
 
     // ensure filter key by pattern (in case of using memory cache store the memoryCache.store.keys(pattern) will always return all keys even specific pattern)
     const filteredKeysWithPrefix: string[] = filterArrayByPattern(
@@ -111,7 +130,7 @@ export class CacheService {
    */
   async get<T>(key: string): Promise<T> {
     const actualKey: string = `${this.getModulePrefix()}${key}`;
-    return this.memoryCache.get<T>(actualKey);
+    return this.cacheManagerInstance.get<T>(actualKey);
   }
 
   /**
@@ -122,7 +141,7 @@ export class CacheService {
    */
   async set(key: string, value: unknown, ttl?: number): Promise<void> {
     const actualKey: string = `${this.getModulePrefix()}${key}`;
-    await this.memoryCache.set(actualKey, value, ttl);
+    await this.cacheManagerInstance.set(actualKey, value, ttl);
   }
 
   /**
@@ -134,6 +153,6 @@ export class CacheService {
    */
   async wrap<T>(key: string, fn: () => Promise<T>, ttl?: number): Promise<T> {
     const actualKey: string = `${this.getModulePrefix()}${key}`;
-    return this.memoryCache.wrap(actualKey, fn, ttl);
+    return this.cacheManagerInstance.wrap(actualKey, fn, ttl);
   }
 }

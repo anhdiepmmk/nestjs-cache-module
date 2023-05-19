@@ -47,4 +47,4 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./package/coverage/lcov.info
+        files: ./package/coverage/lcov.info
