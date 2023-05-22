@@ -100,9 +100,9 @@ describe('CacheDelDecorator', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [
-        CacheModule.register({
+        CacheModule.registerAsync({
           cacheModulePrefix: 'test-module',
-          memoryConfig: {
+          defaultMemoryCacheEngineCreationConfig: {
             ttl: 15 * 60 * 1000,
             max: 100,
           },

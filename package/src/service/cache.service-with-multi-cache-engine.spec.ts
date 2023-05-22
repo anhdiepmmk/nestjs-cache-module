@@ -15,6 +15,26 @@ describe('CacheService', () => {
         CacheModule.registerAsync({
           cacheModulePrefix: 'a-service',
           cacheSeparator: '_',
+          shouldSetupDefaultMemoryCacheEngineAsFallback: false,
+          shouldAlwaysSetupDefaultMemoryCacheEngine: false,
+          cacheEngineCreationConfigs: [
+            {
+              name: 'a cache store engine',
+              type: 'memory',
+              config: {
+                ttl: 5 * 60 * 1000,
+                max: 1000,
+              },
+            },
+            {
+              name: 'b cache store engine',
+              type: 'memory',
+              config: {
+                ttl: 10 * 60 * 1000,
+                max: 999,
+              },
+            },
+          ],
         }),
       ],
     }).compile();
@@ -761,6 +781,144 @@ describe('CacheService', () => {
       expect(cacheEngines[0].store.keys).toHaveBeenCalledWith(
         'a-service_posts-2*',
       );
+    });
+
+    it('when one of cache engine throw an error should ignore error and work as usual', async () => {
+      jest.spyOn(cacheEngines[0].store, 'keys');
+      jest
+        .spyOn(cacheEngines[1].store, 'keys')
+        .mockRejectedValueOnce(new Error('an error'));
+
+      // establish
+      await cacheService.set('posts-1', {
+        id: 1,
+        title: 'a title',
+      });
+
+      await cacheService.set('posts-1-author', {
+        id: 2,
+        title: 'b user name',
+      });
+
+      await cacheService.set('posts-2', {
+        id: 2,
+        title: 'b title',
+      });
+
+      await cacheService.set('posts-2-author', {
+        id: 3,
+        title: 'c user name',
+      });
+
+      await cacheService.set('users-1', {
+        id: 1,
+        name: 'a user name',
+      });
+
+      await cacheService.set('users-2', {
+        id: 2,
+        name: 'b user name',
+      });
+
+      await cacheService.set('users-3', {
+        id: 3,
+        name: 'c user name',
+      });
+
+      // verify
+      await expect(cacheService.keys('posts-2*')).resolves.toEqual([
+        'posts-2-author',
+        'posts-2',
+      ]);
+
+      expect(cacheEngines[0].store.keys).toHaveBeenCalled();
+      expect(cacheEngines[0].store.keys).toHaveBeenCalledTimes(1);
+      expect(cacheEngines[0].store.keys).toHaveBeenCalledWith(
+        'a-service_posts-2*',
+      );
+
+      expect(cacheEngines[1].store.keys).toHaveBeenCalled();
+      expect(cacheEngines[1].store.keys).toHaveBeenCalledTimes(1);
+      expect(cacheEngines[1].store.keys).toHaveBeenCalledWith(
+        'a-service_posts-2*',
+      );
+    });
+
+    it('when all of cache engine throw an error should ignore error and return empty array', async () => {
+      for (let index in cacheEngines) {
+        jest
+          .spyOn(cacheEngines[index].store, 'keys')
+          .mockRejectedValue(new Error(`cache engine ${index} error`));
+      }
+
+      // establish
+      await cacheService.set('posts-1', {
+        id: 1,
+        title: 'a title',
+      });
+
+      await cacheService.set('posts-1-author', {
+        id: 2,
+        title: 'b user name',
+      });
+
+      await cacheService.set('posts-2', {
+        id: 2,
+        title: 'b title',
+      });
+
+      await cacheService.set('posts-2-author', {
+        id: 3,
+        title: 'c user name',
+      });
+
+      await cacheService.set('users-1', {
+        id: 1,
+        name: 'a user name',
+      });
+
+      await cacheService.set('users-2', {
+        id: 2,
+        name: 'b user name',
+      });
+
+      await cacheService.set('users-3', {
+        id: 3,
+        name: 'c user name',
+      });
+
+      // verify
+      await expect(cacheService.keys('posts-2*')).resolves.toEqual([]);
+
+      for (let index in cacheEngines) {
+        expect(cacheEngines[index].store.keys).toHaveBeenCalled();
+        expect(cacheEngines[index].store.keys).toHaveBeenCalledTimes(1);
+        expect(cacheEngines[index].store.keys).toHaveBeenCalledWith(
+          'a-service_posts-2*',
+        );
+      }
+    });
+
+    it('should return uniq keys', async () => {
+      for (let index in cacheEngines) {
+        jest
+          .spyOn(cacheEngines[index].store, 'keys')
+          .mockResolvedValue([
+            'a-service_a-key',
+            'a-service_a-key',
+            'a-service_a-key',
+          ]);
+      }
+
+      await expect(cacheService.keys('a*')).resolves.toEqual(['a-key']);
+
+      for (let index in cacheEngines) {
+        expect(cacheEngines[index].store.keys).toHaveBeenCalled();
+        expect(cacheEngines[index].store.keys).toHaveBeenCalledTimes(1);
+        expect(cacheEngines[index].store.keys).toHaveBeenCalledWith(
+          'a-service_a*',
+        );
+      }
     });
   });
 });

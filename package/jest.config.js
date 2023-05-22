@@ -15,4 +15,6 @@ module.exports = {
       lines: 100,
     },
   },
+  // collectCoverage: true,
+  coverageReporters: ['json', 'lcov', 'text', 'clover'],
 };

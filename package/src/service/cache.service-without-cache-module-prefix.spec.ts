@@ -1,19 +1,21 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CacheService } from './cache.service';
 import { CacheModule } from '../cache.module';
-import { CACHE_MANAGER_INSTANCE } from '../constants';
-import { MemoryCache } from 'cache-manager';
+import { CACHE_ENGINES, CACHE_MANAGER_INSTANCE } from '../constants';
+import { CacheEngine, CacheManager } from '../types';
 describe('CacheService - without cache module prefix', () => {
   let cacheService: CacheService;
-  let memoryCache: MemoryCache;
+  let cacheManager: CacheManager;
+  let cacheEngines: CacheEngine[];
 
   beforeEach(async () => {
     const app: TestingModule = await Test.createTestingModule({
-      imports: [CacheModule.register()],
+      imports: [CacheModule.registerAsync()],
     }).compile();
 
     cacheService = app.get<CacheService>(CacheService);
-    memoryCache = app.get<MemoryCache>(CACHE_MANAGER_INSTANCE);
+    cacheManager = app.get<CacheManager>(CACHE_MANAGER_INSTANCE);
+    cacheEngines = app.get<CacheEngine[]>(CACHE_ENGINES);
   });
 
   afterEach(() => {
@@ -22,7 +24,7 @@ describe('CacheService - without cache module prefix', () => {
 
   describe('wrap', () => {
     it('should set cache by using returned value from wrapped function', async () => {
-      jest.spyOn(memoryCache, 'wrap');
+      jest.spyOn(cacheManager, 'wrap');
       const fn = jest.fn(async () => {
         return 'a value';
       });
@@ -33,16 +35,16 @@ describe('CacheService - without cache module prefix', () => {
 
       await expect(cacheService.keys()).resolves.toEqual(['a-key']);
 
-      expect(memoryCache.wrap).toHaveBeenCalled();
-      expect(memoryCache.wrap).toHaveBeenCalledTimes(1);
-      expect(memoryCache.wrap).toHaveBeenCalledWith('a-key', fn, undefined);
+      expect(cacheManager.wrap).toHaveBeenCalled();
+      expect(cacheManager.wrap).toHaveBeenCalledTimes(1);
+      expect(cacheManager.wrap).toHaveBeenCalledWith('a-key', fn, undefined);
 
       expect(fn).toHaveBeenCalled();
       expect(fn).toHaveBeenCalledTimes(1);
     });
 
     it('when wrapped function throw an error should not set cache', async () => {
-      jest.spyOn(memoryCache, 'wrap');
+      jest.spyOn(cacheManager, 'wrap');
       const fn = jest.fn(async () => {
         throw new Error('an error');
       });
@@ -55,16 +57,16 @@ describe('CacheService - without cache module prefix', () => {
 
       await expect(cacheService.keys()).resolves.toEqual([]);
 
-      expect(memoryCache.wrap).toHaveBeenCalled();
-      expect(memoryCache.wrap).toHaveBeenCalledTimes(1);
-      expect(memoryCache.wrap).toHaveBeenCalledWith('a-key', fn, undefined);
+      expect(cacheManager.wrap).toHaveBeenCalled();
+      expect(cacheManager.wrap).toHaveBeenCalledTimes(1);
+      expect(cacheManager.wrap).toHaveBeenCalledWith('a-key', fn, undefined);
 
       expect(fn).toHaveBeenCalled();
       expect(fn).toHaveBeenCalledTimes(1);
     });
 
     it('should set cache with ttl by using returned value from wrapped function', async () => {
-      jest.spyOn(memoryCache, 'wrap');
+      jest.spyOn(cacheManager, 'wrap');
 
       const fn = jest.fn(async () => {
         return 'a value';
@@ -78,9 +80,9 @@ describe('CacheService - without cache module prefix', () => {
 
       await expect(cacheService.keys()).resolves.toEqual(['a-key']);
 
-      expect(memoryCache.wrap).toHaveBeenCalled();
-      expect(memoryCache.wrap).toHaveBeenCalledTimes(1);
-      expect(memoryCache.wrap).toHaveBeenCalledWith('a-key', fn, 10 * 1000);
+      expect(cacheManager.wrap).toHaveBeenCalled();
+      expect(cacheManager.wrap).toHaveBeenCalledTimes(1);
+      expect(cacheManager.wrap).toHaveBeenCalledWith('a-key', fn, 10 * 1000);
 
       expect(fn).toHaveBeenCalled();
       expect(fn).toHaveBeenCalledTimes(1);
@@ -89,7 +91,7 @@ describe('CacheService - without cache module prefix', () => {
 
   describe('set', () => {
     it('should set', async () => {
-      jest.spyOn(memoryCache.store, 'set');
+      jest.spyOn(cacheManager, 'set');
 
       await expect(
         cacheService.set('a-key', 'a value'),
@@ -97,9 +99,9 @@ describe('CacheService - without cache module prefix', () => {
 
       await expect(cacheService.keys()).resolves.toEqual(['a-key']);
 
-      expect(memoryCache.store.set).toHaveBeenCalled();
-      expect(memoryCache.store.set).toHaveBeenCalledTimes(1);
-      expect(memoryCache.store.set).toHaveBeenCalledWith(
+      expect(cacheManager.set).toHaveBeenCalled();
+      expect(cacheManager.set).toHaveBeenCalledTimes(1);
+      expect(cacheManager.set).toHaveBeenCalledWith(
         'a-key',
         'a value',
         undefined,
@@ -107,7 +109,7 @@ describe('CacheService - without cache module prefix', () => {
     });
 
     it('should set with ttl', async () => {
-      jest.spyOn(memoryCache.store, 'set');
+      jest.spyOn(cacheManager, 'set');
 
       await expect(
         cacheService.set(
@@ -119,9 +121,9 @@ describe('CacheService - without cache module prefix', () => {
 
       await expect(cacheService.keys()).resolves.toEqual(['a-key']);
 
-      expect(memoryCache.store.set).toHaveBeenCalled();
-      expect(memoryCache.store.set).toHaveBeenCalledTimes(1);
-      expect(memoryCache.store.set).toHaveBeenCalledWith(
+      expect(cacheManager.set).toHaveBeenCalled();
+      expect(cacheManager.set).toHaveBeenCalledTimes(1);
+      expect(cacheManager.set).toHaveBeenCalledWith(
         'a-key',
         'a value',
         10 * 1000,
@@ -131,29 +133,29 @@ describe('CacheService - without cache module prefix', () => {
 
   describe('get', () => {
     it('should return cached value', async () => {
-      jest.spyOn(memoryCache.store, 'get');
+      jest.spyOn(cacheManager, 'get');
 
       cacheService.set('b-key', 'b cache value');
 
       await expect(cacheService.get('b-key')).resolves.toEqual('b cache value');
 
-      expect(memoryCache.store.get).toHaveBeenCalled();
-      expect(memoryCache.store.get).toHaveBeenCalledTimes(1);
-      expect(memoryCache.store.get).toHaveBeenCalledWith('b-key');
+      expect(cacheManager.get).toHaveBeenCalled();
+      expect(cacheManager.get).toHaveBeenCalledTimes(1);
+      expect(cacheManager.get).toHaveBeenCalledWith('b-key');
     });
 
     it('should return undefined when cache key do not exist', async () => {
-      jest.spyOn(memoryCache.store, 'get');
+      jest.spyOn(cacheManager, 'get');
 
       await expect(cacheService.get('a-key')).resolves.toBeUndefined();
 
-      expect(memoryCache.store.get).toHaveBeenCalled();
-      expect(memoryCache.store.get).toHaveBeenCalledTimes(1);
-      expect(memoryCache.store.get).toHaveBeenCalledWith('a-key');
+      expect(cacheManager.get).toHaveBeenCalled();
+      expect(cacheManager.get).toHaveBeenCalledTimes(1);
+      expect(cacheManager.get).toHaveBeenCalledWith('a-key');
     });
 
     it('should set with ttl', async () => {
-      jest.spyOn(memoryCache.store, 'set');
+      jest.spyOn(cacheManager, 'set');
 
       await expect(
         cacheService.set(
@@ -165,9 +167,9 @@ describe('CacheService - without cache module prefix', () => {
 
       await expect(cacheService.keys()).resolves.toEqual(['a-key']);
 
-      expect(memoryCache.store.set).toHaveBeenCalled();
-      expect(memoryCache.store.set).toHaveBeenCalledTimes(1);
-      expect(memoryCache.store.set).toHaveBeenCalledWith(
+      expect(cacheManager.set).toHaveBeenCalled();
+      expect(cacheManager.set).toHaveBeenCalledTimes(1);
+      expect(cacheManager.set).toHaveBeenCalledWith(
         'a-key',
         'a value',
         10 * 1000,
@@ -177,7 +179,7 @@ describe('CacheService - without cache module prefix', () => {
 
   describe('reset', () => {
     it('should clear all', async () => {
-      jest.spyOn(memoryCache.store, 'reset');
+      jest.spyOn(cacheManager, 'reset');
 
       // establish
       await cacheService.set('a-key', 'a value');
@@ -197,14 +199,14 @@ describe('CacheService - without cache module prefix', () => {
       // verify
       await expect(cacheService.keys()).resolves.toEqual([]);
 
-      expect(memoryCache.store.reset).toHaveBeenCalled();
-      expect(memoryCache.store.reset).toHaveBeenCalledTimes(1);
+      expect(cacheManager.reset).toHaveBeenCalled();
+      expect(cacheManager.reset).toHaveBeenCalledTimes(1);
     });
   });
 
   describe('del', () => {
     it('should del by key', async () => {
-      jest.spyOn(memoryCache.store, 'mdel');
+      jest.spyOn(cacheManager, 'mdel');
 
       // establish
       await cacheService.set('users-1', {
@@ -235,13 +237,13 @@ describe('CacheService - without cache module prefix', () => {
         expect.arrayContaining(['users-2', 'users-3']),
       );
 
-      expect(memoryCache.store.mdel).toHaveBeenCalled();
-      expect(memoryCache.store.mdel).toHaveBeenCalledTimes(1);
-      expect(memoryCache.store.mdel).toHaveBeenCalledWith('users-1');
+      expect(cacheManager.mdel).toHaveBeenCalled();
+      expect(cacheManager.mdel).toHaveBeenCalledTimes(1);
+      expect(cacheManager.mdel).toHaveBeenCalledWith('users-1');
     });
 
     it('when provided a pattern should del all related key', async () => {
-      jest.spyOn(memoryCache.store, 'mdel');
+      jest.spyOn(cacheManager, 'mdel');
 
       // establish
       await cacheService.set('posts-1', {
@@ -278,9 +280,9 @@ describe('CacheService - without cache module prefix', () => {
       // verify
       await expect(cacheService.keys()).resolves.toEqual(['posts-1']);
 
-      expect(memoryCache.store.mdel).toHaveBeenCalled();
-      expect(memoryCache.store.mdel).toHaveBeenCalledTimes(1);
-      expect(memoryCache.store.mdel).toHaveBeenCalledWith(
+      expect(cacheManager.mdel).toHaveBeenCalled();
+      expect(cacheManager.mdel).toHaveBeenCalledTimes(1);
+      expect(cacheManager.mdel).toHaveBeenCalledWith(
         'users-3',
         'users-2',
         'users-1',
@@ -288,7 +290,7 @@ describe('CacheService - without cache module prefix', () => {
     });
 
     it('when key or pattern is `*` should del all key', async () => {
-      jest.spyOn(memoryCache.store, 'mdel');
+      jest.spyOn(cacheManager, 'mdel');
 
       // establish
       await cacheService.set('posts-1', {
@@ -325,9 +327,9 @@ describe('CacheService - without cache module prefix', () => {
       // verify
       await expect(cacheService.keys()).resolves.toEqual([]);
 
-      expect(memoryCache.store.mdel).toHaveBeenCalled();
-      expect(memoryCache.store.mdel).toHaveBeenCalledTimes(1);
-      expect(memoryCache.store.mdel).toHaveBeenCalledWith(
+      expect(cacheManager.mdel).toHaveBeenCalled();
+      expect(cacheManager.mdel).toHaveBeenCalledTimes(1);
+      expect(cacheManager.mdel).toHaveBeenCalledWith(
         'users-3',
         'users-2',
         'users-1',
@@ -336,7 +338,7 @@ describe('CacheService - without cache module prefix', () => {
     });
 
     it('when key or pattern is `posts-*` should del all key', async () => {
-      jest.spyOn(memoryCache.store, 'mdel');
+      jest.spyOn(cacheManager, 'mdel');
 
       // establish
       await cacheService.set('posts-1', {
@@ -377,15 +379,15 @@ describe('CacheService - without cache module prefix', () => {
         'users-1',
       ]);
 
-      expect(memoryCache.store.mdel).toHaveBeenCalled();
-      expect(memoryCache.store.mdel).toHaveBeenCalledTimes(1);
-      expect(memoryCache.store.mdel).toHaveBeenCalledWith('posts-1');
+      expect(cacheManager.mdel).toHaveBeenCalled();
+      expect(cacheManager.mdel).toHaveBeenCalledTimes(1);
+      expect(cacheManager.mdel).toHaveBeenCalledWith('posts-1');
     });
   });
 
   describe('keys', () => {
     it('when key or pattern is not provided should return all keys', async () => {
-      jest.spyOn(memoryCache.store, 'keys');
+      jest.spyOn(cacheEngines[0].store, 'keys');
 
       // establish
       await cacheService.set('posts-1', {
@@ -416,13 +418,13 @@ describe('CacheService - without cache module prefix', () => {
         'posts-1',
       ]);
 
-      expect(memoryCache.store.keys).toHaveBeenCalled();
-      expect(memoryCache.store.keys).toHaveBeenCalledTimes(1);
-      expect(memoryCache.store.keys).toHaveBeenCalledWith('*');
+      expect(cacheEngines[0].store.keys).toHaveBeenCalled();
+      expect(cacheEngines[0].store.keys).toHaveBeenCalledTimes(1);
+      expect(cacheEngines[0].store.keys).toHaveBeenCalledWith('*');
     });
 
     it('when key or pattern is `*` should return all keys', async () => {
-      jest.spyOn(memoryCache.store, 'keys');
+      jest.spyOn(cacheEngines[0].store, 'keys');
 
       // establish
       await cacheService.set('posts-1', {
@@ -453,13 +455,13 @@ describe('CacheService - without cache module prefix', () => {
         'posts-1',
       ]);
 
-      expect(memoryCache.store.keys).toHaveBeenCalled();
-      expect(memoryCache.store.keys).toHaveBeenCalledTimes(1);
-      expect(memoryCache.store.keys).toHaveBeenCalledWith('*');
+      expect(cacheEngines[0].store.keys).toHaveBeenCalled();
+      expect(cacheEngines[0].store.keys).toHaveBeenCalledTimes(1);
+      expect(cacheEngines[0].store.keys).toHaveBeenCalledWith('*');
     });
 
     it('when key or pattern is `users-*` should return all related keys', async () => {
-      jest.spyOn(memoryCache.store, 'keys');
+      jest.spyOn(cacheEngines[0].store, 'keys');
 
       // establish
       await cacheService.set('posts-1', {
@@ -489,13 +491,13 @@ describe('CacheService - without cache module prefix', () => {
         'users-1',
       ]);
 
-      expect(memoryCache.store.keys).toHaveBeenCalled();
-      expect(memoryCache.store.keys).toHaveBeenCalledTimes(1);
-      expect(memoryCache.store.keys).toHaveBeenCalledWith('users-*');
+      expect(cacheEngines[0].store.keys).toHaveBeenCalled();
+      expect(cacheEngines[0].store.keys).toHaveBeenCalledTimes(1);
+      expect(cacheEngines[0].store.keys).toHaveBeenCalledWith('users-*');
     });
 
     it('when key or pattern is `posts-*` should return all related keys', async () => {
-      jest.spyOn(memoryCache.store, 'keys');
+      jest.spyOn(cacheEngines[0].store, 'keys');
 
       // establish
       await cacheService.set('posts-1', {
@@ -529,13 +531,13 @@ describe('CacheService - without cache module prefix', () => {
         'posts-1',
       ]);
 
-      expect(memoryCache.store.keys).toHaveBeenCalled();
-      expect(memoryCache.store.keys).toHaveBeenCalledTimes(1);
-      expect(memoryCache.store.keys).toHaveBeenCalledWith('posts-*');
+      expect(cacheEngines[0].store.keys).toHaveBeenCalled();
+      expect(cacheEngines[0].store.keys).toHaveBeenCalledTimes(1);
+      expect(cacheEngines[0].store.keys).toHaveBeenCalledWith('posts-*');
     });
 
     it('when key or pattern is `posts-*-author` should return all related keys', async () => {
-      jest.spyOn(memoryCache.store, 'keys');
+      jest.spyOn(cacheEngines[0].store, 'keys');
 
       // establish
       await cacheService.set('posts-1', {
@@ -579,13 +581,13 @@ describe('CacheService - without cache module prefix', () => {
         'posts-1-author',
       ]);
 
-      expect(memoryCache.store.keys).toHaveBeenCalled();
-      expect(memoryCache.store.keys).toHaveBeenCalledTimes(1);
-      expect(memoryCache.store.keys).toHaveBeenCalledWith('posts-*-author');
+      expect(cacheEngines[0].store.keys).toHaveBeenCalled();
+      expect(cacheEngines[0].store.keys).toHaveBeenCalledTimes(1);
+      expect(cacheEngines[0].store.keys).toHaveBeenCalledWith('posts-*-author');
     });
 
     it('when key or pattern is `*2` should return all related keys', async () => {
-      jest.spyOn(memoryCache.store, 'keys');
+      jest.spyOn(cacheEngines[0].store, 'keys');
 
       // establish
       await cacheService.set('posts-1', {
@@ -629,13 +631,13 @@ describe('CacheService - without cache module prefix', () => {
         'posts-2',
       ]);
 
-      expect(memoryCache.store.keys).toHaveBeenCalled();
-      expect(memoryCache.store.keys).toHaveBeenCalledTimes(1);
-      expect(memoryCache.store.keys).toHaveBeenCalledWith('*2');
+      expect(cacheEngines[0].store.keys).toHaveBeenCalled();
+      expect(cacheEngines[0].store.keys).toHaveBeenCalledTimes(1);
+      expect(cacheEngines[0].store.keys).toHaveBeenCalledWith('*2');
     });
 
     it('when key or pattern is `*2*` should return all related keys', async () => {
-      jest.spyOn(memoryCache.store, 'keys');
+      jest.spyOn(cacheEngines[0].store, 'keys');
 
       // establish
       await cacheService.set('posts-1', {
@@ -680,13 +682,13 @@ describe('CacheService - without cache module prefix', () => {
         'posts-2',
       ]);
 
-      expect(memoryCache.store.keys).toHaveBeenCalled();
-      expect(memoryCache.store.keys).toHaveBeenCalledTimes(1);
-      expect(memoryCache.store.keys).toHaveBeenCalledWith('*2*');
+      expect(cacheEngines[0].store.keys).toHaveBeenCalled();
+      expect(cacheEngines[0].store.keys).toHaveBeenCalledTimes(1);
+      expect(cacheEngines[0].store.keys).toHaveBeenCalledWith('*2*');
     });
 
     it('when key or pattern is `posts-2*` should return all related keys', async () => {
-      jest.spyOn(memoryCache.store, 'keys');
+      jest.spyOn(cacheEngines[0].store, 'keys');
 
       // establish
       await cacheService.set('posts-1', {
@@ -730,9 +732,9 @@ describe('CacheService - without cache module prefix', () => {
         'posts-2',
       ]);
 
-      expect(memoryCache.store.keys).toHaveBeenCalled();
-      expect(memoryCache.store.keys).toHaveBeenCalledTimes(1);
-      expect(memoryCache.store.keys).toHaveBeenCalledWith('posts-2*');
+      expect(cacheEngines[0].store.keys).toHaveBeenCalled();
+      expect(cacheEngines[0].store.keys).toHaveBeenCalledTimes(1);
+      expect(cacheEngines[0].store.keys).toHaveBeenCalledWith('posts-2*');
     });
   });
 });
