@@ -1,5 +1,6 @@
 import { Cache, Config, MemoryConfig } from 'cache-manager';
 import { RedisClusterConfig } from 'cache-manager-ioredis-yet';
+import { MongoConfigLegacy } from 'cache-manager-mongodb';
 import Redis, { Cluster, RedisOptions } from 'ioredis';
 
 export type RedisStoreConfig = (
@@ -20,7 +21,8 @@ export type CacheEngineCreationConfig =
         options?: Config;
       };
     }
-  | { name: string; type: 'memory'; config?: MemoryConfig };
+  | { name: string; type: 'memory'; config?: MemoryConfig }
+  | { name: string; type: 'mongodb-legacy'; config: MongoConfigLegacy };
 
 export type CacheModuleOptions = {
   cacheModulePrefix?: string;

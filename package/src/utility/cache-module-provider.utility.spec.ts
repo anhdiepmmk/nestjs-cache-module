@@ -1,16 +1,25 @@
 jest.mock('cache-manager');
 jest.mock('cache-manager-ioredis-yet');
+jest.mock('cache-manager-mongodb');
 
 const IORedis = require('ioredis');
 
 import * as cacheManager from 'cache-manager';
 import * as cacheManagerIOredisYet from 'cache-manager-ioredis-yet';
+import * as cacheManagerMongoDb from 'cache-manager-mongodb';
 import { createMock } from '@golevelup/ts-jest';
-import { memoryStore, MemoryStore, MemoryCache } from 'cache-manager';
+import {
+  memoryStore,
+  MemoryStore,
+  MemoryCache,
+  Store,
+  Cache,
+} from 'cache-manager';
 
 import * as cacheModuleProviderUtility from './cache-module-provider.utility';
 import { RedisStore, RedisCache } from 'cache-manager-ioredis-yet';
 import { CacheEngine } from '../types';
+import { MongoStoreLegacy } from 'cache-manager-mongodb';
 
 describe('cache-module-provider.utility', () => {
   afterEach(() => {
@@ -134,6 +143,54 @@ describe('cache-module-provider.utility', () => {
 
         expect(cacheManager.caching).toHaveBeenCalled();
         expect(cacheManager.caching).toHaveBeenCalledWith(mockMemoryStore);
+      });
+    });
+
+    describe('mongo-legacy', () => {
+      it('should create mongo-legacy cache engine', async () => {
+        const mockMongoStoreLegacy = createMock<MongoStoreLegacy>();
+
+        jest
+          .spyOn(cacheManagerMongoDb, 'create')
+          .mockReturnValue(mockMongoStoreLegacy);
+
+        const mockMongoCacheLegacy = createMock<Cache<Store>>();
+
+        jest
+          .spyOn(cacheManager, 'caching')
+          .mockResolvedValue(mockMongoCacheLegacy);
+
+        await expect(
+          cacheModuleProviderUtility.createCacheEngineFactory({
+            name: 'a mongodb legacy cache engine name',
+            type: 'mongodb-legacy',
+            config: {
+              collection: 'a-collection-name',
+              compression: true,
+              ttl: 5 * 60 * 1000,
+              uri: 'mongodb://localhost:27017/cache-db',
+              options: {
+                autoReconnect: true,
+                poolSize: 10,
+              },
+            },
+          }),
+        ).resolves.toBe(mockMongoCacheLegacy);
+
+        expect(cacheManagerMongoDb.create).toHaveBeenCalled();
+        expect(cacheManagerMongoDb.create).toHaveBeenCalledWith({
+          collection: 'a-collection-name',
+          compression: true,
+          options: {
+            autoReconnect: true,
+            poolSize: 10,
+          },
+          ttl: 300000,
+          uri: 'mongodb://localhost:27017/cache-db',
+        });
+
+        expect(cacheManager.caching).toHaveBeenCalled();
+        expect(cacheManager.caching).toHaveBeenCalledWith(mockMongoStoreLegacy);
       });
     });
 

@@ -223,8 +223,31 @@ describe('CacheService', () => {
   });
 
   describe('del', () => {
+    beforeEach(() => {
+      jest
+        .spyOn(Promise, 'allSettled')
+        .mockImplementation(async (promises: Iterable<unknown>) => {
+          const results: PromiseSettledResult<unknown>[] = [];
+          for (let promise of promises) {
+            try {
+              const result = await promise;
+              results.push({
+                status: 'fulfilled',
+                value: result,
+              });
+            } catch (error) {
+              results.push({
+                status: 'rejected',
+                reason: (error as Error)?.message ?? 'Unknown error',
+              });
+            }
+          }
+          return results;
+        });
+    });
+
     it('should del by key', async () => {
-      jest.spyOn(cacheManager, 'mdel');
+      jest.spyOn(cacheManager, 'del');
 
       // establish
       await cacheService.set('users-1', {
@@ -255,13 +278,13 @@ describe('CacheService', () => {
         expect.arrayContaining(['users-2', 'users-3']),
       );
 
-      expect(cacheManager.mdel).toHaveBeenCalled();
-      expect(cacheManager.mdel).toHaveBeenCalledTimes(1);
-      expect(cacheManager.mdel).toHaveBeenCalledWith('a-service_users-1');
+      expect(cacheManager.del).toHaveBeenCalled();
+      expect(cacheManager.del).toHaveBeenCalledTimes(1);
+      expect(cacheManager.del).toHaveBeenCalledWith('a-service_users-1');
     });
 
     it('when provided a pattern should del all related key', async () => {
-      jest.spyOn(cacheManager, 'mdel');
+      jest.spyOn(cacheManager, 'del');
 
       // establish
       await cacheService.set('posts-1', {
@@ -298,17 +321,15 @@ describe('CacheService', () => {
       // verify
       await expect(cacheService.keys()).resolves.toEqual(['posts-1']);
 
-      expect(cacheManager.mdel).toHaveBeenCalled();
-      expect(cacheManager.mdel).toHaveBeenCalledTimes(1);
-      expect(cacheManager.mdel).toHaveBeenCalledWith(
-        'a-service_users-3',
-        'a-service_users-2',
-        'a-service_users-1',
-      );
+      expect(cacheManager.del).toHaveBeenCalled();
+      expect(cacheManager.del).toHaveBeenCalledTimes(3);
+      expect(cacheManager.del).toHaveBeenNthCalledWith(1, 'a-service_users-3');
+      expect(cacheManager.del).toHaveBeenNthCalledWith(2, 'a-service_users-2');
+      expect(cacheManager.del).toHaveBeenNthCalledWith(3, 'a-service_users-1');
     });
 
     it('when key or pattern is `*` should del all key', async () => {
-      jest.spyOn(cacheManager, 'mdel');
+      jest.spyOn(cacheManager, 'del');
 
       // establish
       await cacheService.set('posts-1', {
@@ -345,18 +366,16 @@ describe('CacheService', () => {
       // verify
       await expect(cacheService.keys()).resolves.toEqual([]);
 
-      expect(cacheManager.mdel).toHaveBeenCalled();
-      expect(cacheManager.mdel).toHaveBeenCalledTimes(1);
-      expect(cacheManager.mdel).toHaveBeenCalledWith(
-        'a-service_users-3',
-        'a-service_users-2',
-        'a-service_users-1',
-        'a-service_posts-1',
-      );
+      expect(cacheManager.del).toHaveBeenCalled();
+      expect(cacheManager.del).toHaveBeenCalledTimes(4);
+      expect(cacheManager.del).toHaveBeenNthCalledWith(1, 'a-service_users-3');
+      expect(cacheManager.del).toHaveBeenNthCalledWith(2, 'a-service_users-2');
+      expect(cacheManager.del).toHaveBeenNthCalledWith(3, 'a-service_users-1');
+      expect(cacheManager.del).toHaveBeenNthCalledWith(4, 'a-service_posts-1');
     });
 
     it('when key or pattern is `posts-*` should del all key', async () => {
-      jest.spyOn(cacheManager, 'mdel');
+      jest.spyOn(cacheManager, 'del');
 
       // establish
       await cacheService.set('posts-1', {
@@ -397,9 +416,9 @@ describe('CacheService', () => {
         'users-1',
       ]);
 
-      expect(cacheManager.mdel).toHaveBeenCalled();
-      expect(cacheManager.mdel).toHaveBeenCalledTimes(1);
-      expect(cacheManager.mdel).toHaveBeenCalledWith('a-service_posts-1');
+      expect(cacheManager.del).toHaveBeenCalled();
+      expect(cacheManager.del).toHaveBeenCalledTimes(1);
+      expect(cacheManager.del).toHaveBeenCalledWith('a-service_posts-1');
     });
   });
 

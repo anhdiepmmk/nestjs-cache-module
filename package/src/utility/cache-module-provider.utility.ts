@@ -4,6 +4,7 @@ import {
   MemoryStore,
   memoryStore,
   caching,
+  Store,
 } from 'cache-manager';
 import {
   DEFAULT_MEMORY_CACHE_MAX,
@@ -15,6 +16,10 @@ import {
   redisStore,
   redisInsStore,
 } from 'cache-manager-ioredis-yet';
+import {
+  MongoStoreLegacy,
+  create as mongoStoreLegacy,
+} from 'cache-manager-mongodb';
 import _ from 'lodash';
 import {
   CacheEngineCreationConfig,
@@ -52,6 +57,16 @@ export const createCacheEngineFactory = async (
       );
 
       return await caching(rStore);
+    }
+
+    if (cacheEngineCreationConfig.type === 'mongodb-legacy') {
+      const mongoStore: MongoStoreLegacy = mongoStoreLegacy(
+        cacheEngineCreationConfig.config,
+      );
+
+      // casting due to legacy store will not support mdel, mset, mget
+      // but our core service `cache.service.ts` also not using these
+      return await caching(mongoStore as any as Store);
     }
 
     if (cacheEngineCreationConfig.type === 'ioredis-instance') {

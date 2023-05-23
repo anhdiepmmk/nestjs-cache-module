@@ -62,9 +62,9 @@ export class CacheService {
 
     const modulePrefix: string = this.getModulePrefix();
 
-    await this.cacheManagerInstance.mdel(
-      ..._.map(keysToDelete, (keysToDelete) => {
-        return `${modulePrefix}${keysToDelete}`;
+    await Promise.allSettled(
+      _.map(keysToDelete, async (keysToDelete) => {
+        await this.cacheManagerInstance.del(`${modulePrefix}${keysToDelete}`);
       }),
     );
   }
